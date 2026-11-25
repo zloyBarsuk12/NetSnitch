@@ -140,4 +140,5 @@ public class AppSettings
     public int PollingIntervalMs { get; set; } = 1000;
     public string MacUsername { get; set; } = "";
     public string MacPasswordEncrypted { get; set; } = "";
+    public string Theme { get; set; } = "Dark";
 }

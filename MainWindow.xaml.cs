@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using NetSnitch.Models;
@@ -13,6 +15,8 @@ namespace NetSnitch;
 
 public partial class MainWindow : Window
 {
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
     private readonly TrafficMonitorService _trafficService = new();
     private readonly DispatcherTimer _pollTimer = new();
 
@@ -67,6 +71,7 @@ public partial class MainWindow : Window
             SubnetCidrCombo.Text = "192.168.1.0/24";
 
         LoadSettingsToUi();
+        SourceInitialized += (_, _) => ApplyTheme(_settings.Theme);
 
         _pollTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(500, _settings.PollingIntervalMs));
         _pollTimer.Tick += (_, _) => PollTraffic();
@@ -89,6 +94,36 @@ public partial class MainWindow : Window
         SettingMacPassBox.Password = decPass;
         MacSshPassBox.Password = decPass;
         VersionBadgeText.Text = $"v{AutoUpdateService.GetCurrentVersionString()}";
+        KpiCredsText.Text = string.IsNullOrWhiteSpace(_settings.MacUsername) ? "Не заданы" : $"🔒 {_settings.MacUsername}";
+        ApplyTheme(_settings.Theme);
+    }
+
+    private void ApplyTheme(string theme)
+    {
+        bool isLight = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase);
+        var dicts = Application.Current.Resources.MergedDictionaries;
+        if (dicts.Count > 0)
+        {
+            dicts[0] = new ResourceDictionary
+            {
+                Source = new Uri(isLight ? "Themes/LightTheme.xaml" : "Themes/DarkTheme.xaml", UriKind.Relative)
+            };
+        }
+        ThemeToggleBtn.Content = isLight ? "🌙 Чёрная" : "☀️ Светлая";
+
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            int darkVal = isLight ? 0 : 1;
+            _ = DwmSetWindowAttribute(hwnd, 20, ref darkVal, sizeof(int));
+        }
+    }
+
+    private void ThemeToggleBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.Theme = string.Equals(_settings.Theme, "Light", StringComparison.OrdinalIgnoreCase) ? "Dark" : "Light";
+        ApplyTheme(_settings.Theme);
+        SettingsService.Save(_settings);
     }
 
     private async Task RunSilentStartupUpdateCheckAsync()
@@ -336,7 +371,10 @@ public partial class MainWindow : Window
         _subnetCts = new CancellationTokenSource();
         SubnetScanBtn.IsEnabled = false;
         SubnetStopBtn.IsEnabled = true;
-        SubnetStatusText.Text = "Сканирование (Ping + ARP + mDNS)...";
+        KpiSubnetText.Text = cidr;
+        KpiMacCountText.Text = "0";
+        KpiTotalHostsText.Text = "0";
+        SubnetStatusText.Text = "Сканирование (Ping + ARP + TCP + mDNS)...";
 
         try
         {
@@ -347,6 +385,8 @@ public partial class MainWindow : Window
                     _allSubnetHosts.Add(host);
                     if (OnlyMacCheck.IsChecked != true || host.IsMac || host.IsApple)
                         _subnetHosts.Add(host);
+                    KpiTotalHostsText.Text = _allSubnetHosts.Count.ToString();
+                    KpiMacCountText.Text = _allSubnetHosts.Count(h => h.IsMac).ToString();
                 }),
                 (done, total) => Dispatcher.Invoke(() =>
                 {
@@ -688,6 +728,7 @@ public partial class MainWindow : Window
             _pollTimer.Interval = TimeSpan.FromMilliseconds(ms);
         }
         SettingsService.Save(_settings);
+        KpiCredsText.Text = string.IsNullOrWhiteSpace(_settings.MacUsername) ? "Не заданы" : $"🔒 {_settings.MacUsername}";
         UpdateStatusText.Text = "Настройки и учётные данные сохранены.";
     }
 
@@ -699,6 +740,7 @@ public partial class MainWindow : Window
         SettingMacUserBox.Text = _settings.MacUsername;
         SettingMacPassBox.Password = MacSshPassBox.Password;
         SettingsService.Save(_settings);
+        KpiCredsText.Text = string.IsNullOrWhiteSpace(_settings.MacUsername) ? "Не заданы" : $"🔒 {_settings.MacUsername}";
         MacInventoryStatusText.Text = "Учётные данные сохранены (DPAPI).";
     }
 

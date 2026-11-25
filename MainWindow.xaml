@@ -5,17 +5,17 @@
         Icon="pack://application:,,,/Assets/NetSnitch.ico"
         Height="860" Width="1440" MinHeight="650" MinWidth="1100"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BgPrimaryBrush}">
+        Background="{DynamicResource BgPrimaryBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="52"/>
+            <RowDefinition Height="56"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="26"/>
+            <RowDefinition Height="28"/>
         </Grid.RowDefinitions>
 
         <!-- TOP HEADER BAR -->
-        <Border Grid.Row="0" Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="14,0">
+        <Border Grid.Row="0" Background="{DynamicResource BgSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -26,33 +26,34 @@
 
                 <!-- Brand -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Ellipse Width="10" Height="10" Fill="{StaticResource AccentGreenBrush}" Margin="0,0,8,0"/>
-                    <TextBlock Text="NetSnitch" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
-                    <TextBlock Text="Network Combine" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="8,1,0,0"/>
-                    <Border Background="#2D2212" BorderBrush="#92400E" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
-                        <TextBlock Text="Socket Polling + DNS + Tools" FontSize="11" Foreground="#FBBF24"/>
+                    <Ellipse Width="10" Height="10" Fill="{DynamicResource AccentGreenBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="NetSnitch" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Network Combine" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="8,1,0,0"/>
+                    <Border Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" CornerRadius="6" Padding="8,2" Margin="10,0,0,0">
+                        <TextBlock Text="Fluent • DNS • ARD • SSH" FontSize="11" Foreground="{DynamicResource AccentBlueBrush}"/>
                     </Border>
                 </StackPanel>
 
                 <!-- Center stats pill -->
                 <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Background="{StaticResource BgPrimaryBrush}" BorderBrush="{StaticResource BorderLightBrush}"
-                        BorderThickness="1" CornerRadius="5" Padding="16,4">
-                    <TextBlock x:Name="StatsPillText" Text="0 хостов • 0 событий" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        Background="{DynamicResource BgPrimaryBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8" Padding="16,5">
+                    <TextBlock x:Name="StatsPillText" Text="0 хостов • 0 событий" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </Border>
 
                 <!-- Search -->
-                <TextBox x:Name="GlobalSearchBox" Grid.Column="2" Width="260" VerticalAlignment="Center" Margin="0,0,10,0"
+                <TextBox x:Name="GlobalSearchBox" Grid.Column="2" Width="240" VerticalAlignment="Center" Margin="0,0,10,0"
                          ToolTip="Поиск: домен, IP, порт, орг..."
                          TextChanged="GlobalSearchBox_TextChanged"/>
 
                 <!-- Toolbar Buttons -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="ThemeToggleBtn" Content="☀️ Светлая" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="ThemeToggleBtn_Click" ToolTip="Переключить чёрную / светлую тему"/>
                     <Button x:Name="PauseBtn" Content="⏸ Пауза" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="PauseBtn_Click"/>
                     <Button x:Name="ClearBtn" Content="🗑 Очистить" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="ClearBtn_Click"/>
-                    <Button x:Name="ExportBtn" Content="⬇ Экспорт (csv/txt)" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,8,0" Click="ExportBtn_Click"/>
-                    <Border x:Name="VersionBadge" Background="#132A1F" BorderBrush="#166534" BorderThickness="1" CornerRadius="4" Padding="8,4" Cursor="Hand" MouseLeftButtonUp="VersionBadge_Click">
-                        <TextBlock x:Name="VersionBadgeText" Text="v1.0.0" FontSize="11" Foreground="#4ADE80"/>
+                    <Button x:Name="ExportBtn" Content="⬇ Экспорт" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,8,0" Click="ExportBtn_Click"/>
+                    <Border x:Name="VersionBadge" Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource AccentGreenBrush}" BorderThickness="1" CornerRadius="6" Padding="8,4" Cursor="Hand" MouseLeftButtonUp="VersionBadge_Click">
+                        <TextBlock x:Name="VersionBadgeText" Text="v1.4.0" FontSize="11" Foreground="{DynamicResource AccentGreenBrush}" FontWeight="SemiBold"/>
                     </Border>
                 </StackPanel>
             </Grid>
@@ -61,12 +62,12 @@
         <!-- MAIN BODY -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="235"/>
+                <ColumnDefinition Width="240"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- LEFT SIDEBAR -->
-            <Border Grid.Column="0" Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" Background="{DynamicResource BgSidebarBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -257,18 +258,48 @@
                 <Grid x:Name="PanelSubnet" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock Text="Подсеть (CIDR):" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <ComboBox x:Name="SubnetCidrCombo" Width="220" IsEditable="True" Margin="0,0,8,0"/>
+
+                    <!-- Fluent KPI Cards -->
+                    <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,10">
+                        <Border Style="{StaticResource KpiCardStyle}" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="Целевая подсеть" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="KpiSubnetText" Text="—" FontSize="15" FontWeight="Bold" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource KpiCardStyle}" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="Найдено Mac" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="KpiMacCountText" Text="0" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentGreenBrush}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource KpiCardStyle}" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="Всего устройств" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="KpiTotalHostsText" Text="0" FontSize="15" FontWeight="Bold" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource KpiCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Учётные данные Mac" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="KpiCredsText" Text="Не заданы" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentBlueBrush}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Подсеть (CIDR):" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <ComboBox x:Name="SubnetCidrCombo" Width="210" IsEditable="True" Margin="0,0,8,0"/>
                         <Button x:Name="SubnetScanBtn" Content="▶ Сканировать подсеть" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="SubnetScanBtn_Click"/>
                         <Button x:Name="SubnetStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,10,0" Click="SubnetStopBtn_Click"/>
-                        <CheckBox x:Name="OnlyMacCheck" Content="🍎 Только Mac / Apple" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0" Checked="OnlyMacCheck_Changed" Unchecked="OnlyMacCheck_Changed"/>
+                        <CheckBox x:Name="OnlyMacCheck" Content="🍎 Только Mac / Apple" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0" Checked="OnlyMacCheck_Changed" Unchecked="OnlyMacCheck_Changed"/>
                         <Button Content="📋 Собрать железо (SSH)" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,10,0" Click="SubnetCollectMacHw_Click"/>
-                        <TextBlock x:Name="SubnetStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock x:Name="SubnetStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     </StackPanel>
-                    <DataGrid x:Name="SubnetGrid" Grid.Row="1">
+                    <DataGrid x:Name="SubnetGrid" Grid.Row="2">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="135"/>
                             <DataGridTextColumn Header="Тип / ОС" Binding="{Binding DeviceType}" Width="185"/>
@@ -549,10 +580,10 @@
         </Grid>
 
         <!-- STATUS BAR -->
-        <Border Grid.Row="2" Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,0">
+        <Border Grid.Row="2" Background="{DynamicResource BgSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16,0">
             <Grid>
-                <TextBlock x:Name="FooterStatusText" Text="Готов к работе" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
-                <TextBlock Text="NetSnitch Combine • C# / WPF (.NET)" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                <TextBlock x:Name="FooterStatusText" Text="Готов к работе" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                <TextBlock Text="NetSnitch Combine • Win11 Fluent" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
             </Grid>
         </Border>
     </Grid>

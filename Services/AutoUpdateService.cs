@@ -44,6 +44,33 @@ public static class AutoUpdateService
 
         try
         {
+            // Use github.com/releases/latest redirect first to avoid api.github.com 60 req/hr rate limit
+            using var noRedirectHandler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var webClient = new HttpClient(noRedirectHandler) { Timeout = TimeSpan.FromSeconds(10) };
+            webClient.DefaultRequestHeaders.UserAgent.ParseAdd("NetSnitch-AutoUpdater/1.0");
+
+            string webLatestUrl = $"https://github.com/{owner.Trim()}/{repo.Trim()}/releases/latest";
+            using var webResp = await webClient.GetAsync(webLatestUrl).ConfigureAwait(false);
+            string? location = webResp.Headers.Location?.ToString();
+            if (!string.IsNullOrEmpty(location) && location.Contains("/releases/tag/", StringComparison.OrdinalIgnoreCase))
+            {
+                string webTag = location.Split("/releases/tag/").Last().Trim('/');
+                string cleanWebTag = webTag.TrimStart('v', 'V');
+                string dlUrl = $"https://github.com/{owner.Trim()}/{repo.Trim()}/releases/download/{webTag}/NetSnitch-win-x64.zip";
+
+                bool isNewerWeb = Version.TryParse(cleanWebTag, out var latestWebVer) &&
+                                  latestWebVer > new Version(GetCurrentVersion().Major, GetCurrentVersion().Minor, Math.Max(0, GetCurrentVersion().Build));
+
+                return new UpdateCheckResult
+                {
+                    UpdateAvailable = isNewerWeb,
+                    CurrentVersion = currentStr,
+                    LatestVersion = cleanWebTag,
+                    DownloadUrl = dlUrl,
+                    AssetName = "NetSnitch-win-x64.zip"
+                };
+            }
+
             string url = $"https://api.github.com/repos/{owner.Trim()}/{repo.Trim()}/releases/latest";
             using var resp = await Http.GetAsync(url).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode)
