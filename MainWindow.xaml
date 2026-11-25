@@ -275,10 +275,11 @@
                             <DataGridTextColumn Header="Производитель (OUI)" Binding="{Binding Vendor}" Width="150"/>
                             <DataGridTextColumn Header="Пинг" Binding="{Binding RttMs}" Width="75"/>
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="75"/>
-                            <DataGridTemplateColumn Header="Действия" Width="155">
+                            <DataGridTemplateColumn Header="Действия" Width="210">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
+                                            <Button Content="🖥 ARD" Style="{StaticResource MiniButtonStyle}" Margin="0,0,4,0" Click="SubnetArd_Click"/>
                                             <Button Content="Порты" Style="{StaticResource MiniButtonStyle}" Margin="0,0,4,0" Click="SubnetScanPorts_Click"/>
                                             <Button Content="WoL" Style="{StaticResource MiniButtonStyle}" Click="SubnetWol_Click"/>
                                         </StackPanel>

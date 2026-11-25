@@ -1,7 +1,7 @@
 <Window x:Class="NetSnitchInstaller.InstallerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Установка NetSnitch Combine v1.1.3"
+        Title="Установка NetSnitch Combine v1.2.0"
         Icon="pack://application:,,,/NetSnitch.ico"
         Height="430" Width="560" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
@@ -20,7 +20,7 @@
             <Image Source="pack://application:,,,/NetSnitch.ico" Width="44" Height="44" Margin="0,0,14,0"/>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock x:Name="TitleText" Text="NetSnitch Combine" FontSize="19" FontWeight="Bold" Foreground="#FFFFFF"/>
-                <TextBlock x:Name="SubtitleText" Text="Версия 1.1.3 • Мастер установки" FontSize="12" Foreground="#94A3B8"/>
+                <TextBlock x:Name="SubtitleText" Text="Версия 1.2.0 • Мастер установки" FontSize="12" Foreground="#94A3B8"/>
             </StackPanel>
         </StackPanel>
 

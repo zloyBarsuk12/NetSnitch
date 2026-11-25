@@ -367,6 +367,15 @@ public partial class MainWindow : Window
 
     private void SubnetStopBtn_Click(object sender, RoutedEventArgs e) => _subnetCts?.Cancel();
 
+    private void SubnetArd_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.DataContext is SubnetHostEntry host)
+        {
+            var viewer = new ArdViewerWindow(host.IpAddress, 5900) { Owner = this };
+            viewer.Show();
+        }
+    }
+
     private void SubnetScanPorts_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as Button)?.DataContext is SubnetHostEntry host)
