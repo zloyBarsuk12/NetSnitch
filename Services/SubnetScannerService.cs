@@ -191,7 +191,7 @@ public static class SubnetScannerService
                 try
                 {
                     using var ping = new Ping();
-                    var reply = await ping.SendPingAsync(ip, 500).ConfigureAwait(false);
+                    var reply = await ping.SendPingAsync(ip, 600).ConfigureAwait(false);
                     if (reply.Status == IPStatus.Success)
                     {
                         alive = true;
@@ -202,6 +202,16 @@ public static class SubnetScannerService
 
                 string? mac = await Task.Run(() => NativeNetworkApi.ResolveMacViaArp(ip), ct).ConfigureAwait(false);
                 if (!string.IsNullOrEmpty(mac)) alive = true;
+
+                // Fallback TCP discovery for hosts with ICMP blocked (e.g., macOS Stealth Mode or routed VLAN/VPN)
+                if (!alive)
+                {
+                    int[] probePorts = [22, 5900, 548, 3283, 445, 80, 443];
+                    var probeTasks = probePorts.Select(p => IsPortOpenAsync(ip.ToString(), p, 400, ct));
+                    var probeResults = await Task.WhenAll(probeTasks).ConfigureAwait(false);
+                    if (probeResults.Any(open => open))
+                        alive = true;
+                }
 
                 if (alive)
                 {
@@ -214,6 +224,13 @@ public static class SubnetScannerService
                             hostname = entry.HostName;
                     }
                     catch { }
+
+                    if (hostname == "—")
+                    {
+                        string? mdnsName = await QueryUnicastMdnsPtrAsync(ip, ct).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(mdnsName))
+                            hostname = mdnsName;
+                    }
 
                     string vendor = LookupVendor(mac);
                     mdnsMap.TryGetValue(ipStr, out var mdnsHint);
@@ -229,7 +246,7 @@ public static class SubnetScannerService
                         DeviceType = deviceType,
                         IsApple = isApple,
                         IsMac = isMac,
-                        RttMs = rtt > 0 ? $"{rtt} ms" : "<1 ms",
+                        RttMs = rtt > 0 ? $"{rtt} ms" : "TCP",
                         Status = "Online"
                     });
                 }
@@ -264,32 +281,59 @@ public static class SubnetScannerService
             return ($"🍎 Apple ({mdnsHint})", true, false);
         }
 
+        // Probe key OS-identifying ports in parallel (works even across routed subnets without ARP/OUI)
+        var t62078 = IsPortOpenAsync(ip, 62078, 250, ct); // iOS Lockdown
+        var t548 = IsPortOpenAsync(ip, 548, 250, ct);     // Apple Filing Protocol (AFP)
+        var t3283 = IsPortOpenAsync(ip, 3283, 250, ct);   // Apple Remote Desktop
+        var t5900 = IsPortOpenAsync(ip, 5900, 250, ct);   // Apple Screen Sharing / VNC
+        var t3389 = IsPortOpenAsync(ip, 3389, 200, ct);   // Windows RDP
+        var t445 = IsPortOpenAsync(ip, 445, 200, ct);     // SMB
+        var t22 = IsPortOpenAsync(ip, 22, 200, ct);       // SSH
+        await Task.WhenAll(t62078, t548, t3283, t5900, t3389, t445, t22).ConfigureAwait(false);
+
+        if (t62078.Result)
+            return ("📱 iPhone / iPad (iOS)", true, false);
+
+        if (t548.Result || t3283.Result)
+            return ("🍎 Mac (macOS)", true, true);
+
+        if (t5900.Result && (appleOui || macNameHint || hostname.EndsWith(".local", StringComparison.OrdinalIgnoreCase) || !t3389.Result))
+            return ("🍎 Mac (macOS / Screen Sharing)", true, true);
+
         if (appleOui || macNameHint || hostname.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
-        {
-            bool iosLockdown = await IsPortOpenAsync(ip, 62078, 180, ct).ConfigureAwait(false);
-            if (iosLockdown)
-                return ("📱 iPhone / iPad (iOS)", true, false);
-
-            bool afp = await IsPortOpenAsync(ip, 548, 180, ct).ConfigureAwait(false);
-            bool vnc = await IsPortOpenAsync(ip, 5900, 180, ct).ConfigureAwait(false);
-            if (afp || vnc || macNameHint)
-                return ("🍎 Mac (macOS)", true, true);
-
-            if (appleOui)
-                return ("🍎 Apple (Mac / iOS)", true, true);
-        }
+            return ("🍎 Mac (macOS)", true, true);
 
         if (vendor is "MikroTik" or "Ubiquiti" or "TP-Link" or "ASUSTek")
             return ("🌐 Сетевое устройство", false, false);
 
-        if (await IsPortOpenAsync(ip, 3389, 150, ct).ConfigureAwait(false) ||
-            await IsPortOpenAsync(ip, 445, 150, ct).ConfigureAwait(false))
+        if (t3389.Result || t445.Result)
             return ("🪟 Windows / SMB", false, false);
 
-        if (await IsPortOpenAsync(ip, 22, 150, ct).ConfigureAwait(false))
+        if (t22.Result)
             return ("🐧 Linux / Unix (SSH)", false, false);
 
         return ("💻 Устройство", false, false);
+    }
+
+    private static async Task<string?> QueryUnicastMdnsPtrAsync(IPAddress ip, CancellationToken ct)
+    {
+        try
+        {
+            string rev = string.Join('.', ip.GetAddressBytes().Reverse()) + ".in-addr.arpa";
+            byte[] query = BuildMdnsPtrQuery(rev);
+            using var udp = new UdpClient();
+            await udp.SendAsync(query, query.Length, new IPEndPoint(ip, 5353)).ConfigureAwait(false);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(300);
+            var res = await udp.ReceiveAsync(cts.Token).ConfigureAwait(false);
+            string ascii = Encoding.ASCII.GetString(res.Buffer);
+            var m = Regex.Match(ascii, @"([A-Za-z0-9_-]+\.local)");
+            return m.Success ? m.Groups[1].Value : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static async Task<bool> IsPortOpenAsync(string ip, int port, int timeoutMs, CancellationToken ct)
