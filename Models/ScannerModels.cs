@@ -119,10 +119,25 @@ public class UpdateCheckResult
     public string Error { get; set; } = string.Empty;
 }
 
+public class MacHardwareInfo
+{
+    public string IpAddress { get; set; } = string.Empty;
+    public string Hostname { get; set; } = "—";
+    public string Model { get; set; } = "—";
+    public string Cpu { get; set; } = "—";
+    public string Ram { get; set; } = "—";
+    public string Disk { get; set; } = "—";
+    public string MacOs { get; set; } = "—";
+    public string SerialNumber { get; set; } = "—";
+    public string Status { get; set; } = "OK";
+}
+
 public class AppSettings
 {
     public string GitHubOwner { get; set; } = "zloyBarsuk12";
     public string GitHubRepo { get; set; } = "NetSnitch";
     public bool SilentAutoUpdate { get; set; } = true;
     public int PollingIntervalMs { get; set; } = 1000;
+    public string MacUsername { get; set; } = "";
+    public string MacPasswordEncrypted { get; set; } = "";
 }

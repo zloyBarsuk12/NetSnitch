@@ -101,7 +101,7 @@ public partial class InstallerWindow : Window
 public static class InstallerLogic
 {
     private const string AppName = "NetSnitch Combine";
-    private const string AppVersion = "1.2.0";
+    private const string AppVersion = "1.3.0";
     private const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\NetSnitchCombine";
 
     public static string DefaultInstallDir => Path.Combine(

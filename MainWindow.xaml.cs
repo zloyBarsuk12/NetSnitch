@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<MtrHopEntry> _traceHops = [];
     private readonly ObservableCollection<SubnetHostEntry> _subnetHosts = [];
     private readonly List<SubnetHostEntry> _allSubnetHosts = [];
+    private readonly ObservableCollection<MacHardwareInfo> _macInventory = [];
     private readonly ObservableCollection<PortScanResult> _portResults = [];
     private readonly ObservableCollection<DigRecordEntry> _digResults = [];
     private readonly ObservableCollection<ListeningPortEntry> _listeningPorts = [];
@@ -48,6 +49,7 @@ public partial class MainWindow : Window
         DnsLogsGrid.ItemsSource = _dnsLogs;
         TraceGrid.ItemsSource = _traceHops;
         SubnetGrid.ItemsSource = _subnetHosts;
+        MacInventoryGrid.ItemsSource = _macInventory;
         PortGrid.ItemsSource = _portResults;
         DigGrid.ItemsSource = _digResults;
         ListeningGrid.ItemsSource = _listeningPorts;
@@ -81,6 +83,11 @@ public partial class MainWindow : Window
         SettingRepoBox.Text = _settings.GitHubRepo;
         SettingIntervalBox.Text = _settings.PollingIntervalMs.ToString();
         SettingSilentUpdateCheck.IsChecked = _settings.SilentAutoUpdate;
+        SettingMacUserBox.Text = _settings.MacUsername;
+        MacSshUserBox.Text = _settings.MacUsername;
+        string decPass = SettingsService.UnprotectString(_settings.MacPasswordEncrypted);
+        SettingMacPassBox.Password = decPass;
+        MacSshPassBox.Password = decPass;
         VersionBadgeText.Text = $"v{AutoUpdateService.GetCurrentVersionString()}";
     }
 
@@ -107,6 +114,7 @@ public partial class MainWindow : Window
         if (PanelTraffic == null) return;
         PanelTraffic.Visibility = NavTraffic.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PanelSubnet.Visibility = NavSubnet.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        PanelMacInventory.Visibility = NavMacInventory.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PanelPorts.Visibility = NavPorts.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PanelDig.Visibility = NavDig.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PanelListening.Visibility = NavListening.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
@@ -371,9 +379,18 @@ public partial class MainWindow : Window
     {
         if ((sender as Button)?.DataContext is SubnetHostEntry host)
         {
-            var viewer = new ArdViewerWindow(host.IpAddress, 5900) { Owner = this };
+            string pass = SettingsService.UnprotectString(_settings.MacPasswordEncrypted);
+            var viewer = new ArdViewerWindow(host.IpAddress, 5900, _settings.MacUsername, pass) { Owner = this };
             viewer.Show();
         }
+    }
+
+    private async void SubnetCollectMacHw_Click(object sender, RoutedEventArgs e)
+    {
+        LoadMacsFromScanner();
+        NavMacInventory.IsChecked = true;
+        if (!string.IsNullOrWhiteSpace(MacTargetsBox.Text))
+            await CollectMacInventoryAsync();
     }
 
     private void SubnetScanPorts_Click(object sender, RoutedEventArgs e)
@@ -661,14 +678,114 @@ public partial class MainWindow : Window
         _settings.GitHubOwner = SettingOwnerBox.Text.Trim();
         _settings.GitHubRepo = SettingRepoBox.Text.Trim();
         _settings.SilentAutoUpdate = SettingSilentUpdateCheck.IsChecked == true;
+        _settings.MacUsername = SettingMacUserBox.Text.Trim();
+        _settings.MacPasswordEncrypted = SettingsService.ProtectString(SettingMacPassBox.Password);
+        MacSshUserBox.Text = _settings.MacUsername;
+        MacSshPassBox.Password = SettingMacPassBox.Password;
         if (int.TryParse(SettingIntervalBox.Text.Trim(), out int ms) && ms >= 500)
         {
             _settings.PollingIntervalMs = ms;
             _pollTimer.Interval = TimeSpan.FromMilliseconds(ms);
         }
         SettingsService.Save(_settings);
-        UpdateStatusText.Text = "Настройки сохранены.";
+        UpdateStatusText.Text = "Настройки и учётные данные сохранены.";
     }
+
+    #region Mac Inventory (SSH)
+    private void SaveMacCreds_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.MacUsername = MacSshUserBox.Text.Trim();
+        _settings.MacPasswordEncrypted = SettingsService.ProtectString(MacSshPassBox.Password);
+        SettingMacUserBox.Text = _settings.MacUsername;
+        SettingMacPassBox.Password = MacSshPassBox.Password;
+        SettingsService.Save(_settings);
+        MacInventoryStatusText.Text = "Учётные данные сохранены (DPAPI).";
+    }
+
+    private void LoadMacsFromScanner()
+    {
+        var macIps = _allSubnetHosts.Where(h => h.IsMac).Select(h => h.IpAddress).ToList();
+        if (macIps.Count == 0)
+            macIps = _allSubnetHosts.Select(h => h.IpAddress).ToList();
+        MacTargetsBox.Text = string.Join(", ", macIps);
+    }
+
+    private void LoadMacsFromScanner_Click(object sender, RoutedEventArgs e) => LoadMacsFromScanner();
+
+    private async void MacCollectBtn_Click(object sender, RoutedEventArgs e) => await CollectMacInventoryAsync();
+
+    private async Task CollectMacInventoryAsync()
+    {
+        var ips = MacTargetsBox.Text
+            .Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct()
+            .ToList();
+
+        if (ips.Count == 0)
+        {
+            MacInventoryStatusText.Text = "Укажите IP-адреса Mac.";
+            return;
+        }
+
+        string user = MacSshUserBox.Text.Trim();
+        string pass = MacSshPassBox.Password;
+        if (string.IsNullOrWhiteSpace(user))
+        {
+            MacInventoryStatusText.Text = "Укажите логин Mac (можно сохранить кнопкой «Запомнить»).";
+            return;
+        }
+
+        _macInventory.Clear();
+        MacCollectBtn.IsEnabled = false;
+        MacInventoryStatusText.Text = $"Сбор данных с {ips.Count} хостов по SSH...";
+
+        using var gate = new SemaphoreSlim(8, 8);
+        int done = 0;
+
+        try
+        {
+            var tasks = ips.Select(async ip =>
+            {
+                await gate.WaitAsync();
+                try
+                {
+                    var res = await MacInventoryService.CollectAsync(ip, user, pass, CancellationToken.None);
+                    Dispatcher.Invoke(() =>
+                    {
+                        _macInventory.Add(res);
+                        done++;
+                        MacInventoryStatusText.Text = $"Обработано {done}/{ips.Count}";
+                    });
+                }
+                finally { gate.Release(); }
+            });
+            await Task.WhenAll(tasks);
+            MacInventoryStatusText.Text = $"Готово • Собрано: {_macInventory.Count}";
+        }
+        finally
+        {
+            MacCollectBtn.IsEnabled = true;
+        }
+    }
+
+    private void ExportMacCsv_Click(object sender, RoutedEventArgs e)
+    {
+        if (_macInventory.Count == 0) return;
+        var dlg = new SaveFileDialog
+        {
+            Filter = "CSV файл (*.csv)|*.csv",
+            FileName = $"mac_inventory_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("IP,Hostname,Model,CPU,RAM,Disk,macOS,SerialNumber,Status");
+        foreach (var m in _macInventory)
+            sb.AppendLine($"\"{m.IpAddress}\",\"{m.Hostname}\",\"{m.Model}\",\"{m.Cpu}\",\"{m.Ram}\",\"{m.Disk}\",\"{m.MacOs}\",\"{m.SerialNumber}\",\"{m.Status}\"");
+        File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
+        MacInventoryStatusText.Text = $"Экспортировано: {dlg.FileName}";
+    }
+    #endregion
 
     private async void CheckUpdateBtn_Click(object sender, RoutedEventArgs e)
     {

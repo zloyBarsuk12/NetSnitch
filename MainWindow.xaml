@@ -78,6 +78,7 @@
                         <TextBlock Text="ИНСТРУМЕНТЫ" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="10,2,0,4"/>
                         <RadioButton x:Name="NavTraffic" Content="📡  Монитор трафика" Style="{StaticResource NavButtonStyle}" IsChecked="True" Checked="Nav_Checked"/>
                         <RadioButton x:Name="NavSubnet" Content="🌐  Сканер подсетей" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavMacInventory" Content="🍎  Инвентаризация Mac" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
                         <RadioButton x:Name="NavPorts" Content="🔓  Сканер портов" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
                         <RadioButton x:Name="NavDig" Content="🔍  Dig / DNS" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
                         <RadioButton x:Name="NavListening" Content="🎧  Слушающие порты" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
@@ -263,7 +264,8 @@
                         <ComboBox x:Name="SubnetCidrCombo" Width="220" IsEditable="True" Margin="0,0,8,0"/>
                         <Button x:Name="SubnetScanBtn" Content="▶ Сканировать подсеть" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="SubnetScanBtn_Click"/>
                         <Button x:Name="SubnetStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,10,0" Click="SubnetStopBtn_Click"/>
-                        <CheckBox x:Name="OnlyMacCheck" Content="🍎 Только Mac / Apple" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Checked="OnlyMacCheck_Changed" Unchecked="OnlyMacCheck_Changed"/>
+                        <CheckBox x:Name="OnlyMacCheck" Content="🍎 Только Mac / Apple" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0" Checked="OnlyMacCheck_Changed" Unchecked="OnlyMacCheck_Changed"/>
+                        <Button Content="📋 Собрать железо (SSH)" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,10,0" Click="SubnetCollectMacHw_Click"/>
                         <TextBlock x:Name="SubnetStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
                     <DataGrid x:Name="SubnetGrid" Grid.Row="1">
@@ -286,6 +288,41 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 2B. MAC INVENTORY (SSH) PANEL -->
+                <Grid x:Name="PanelMacInventory" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <WrapPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="IP (через запятую):" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="MacTargetsBox" Width="210" Margin="0,0,8,0" ToolTip="Например: 192.168.108.10, 192.168.108.11"/>
+                        <TextBlock Text="Логин:" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="MacSshUserBox" Width="110" Margin="0,0,8,0"/>
+                        <TextBlock Text="Пароль:" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <PasswordBox x:Name="MacSshPassBox" Width="115" Background="{StaticResource BgSecondaryBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" Padding="6,4" Margin="0,0,8,0"/>
+                        <Button Content="💾 Запомнить" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="SaveMacCreds_Click"/>
+                        <Button Content="📋 Из сканера" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="LoadMacsFromScanner_Click"/>
+                        <Button x:Name="MacCollectBtn" Content="▶ Собрать (SSH)" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="MacCollectBtn_Click"/>
+                        <Button Content="⬇ Экспорт CSV" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,10,0" Click="ExportMacCsv_Click"/>
+                        <TextBlock x:Name="MacInventoryStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="MacInventoryGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="125"/>
+                            <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="150"/>
+                            <DataGridTextColumn Header="Модель" Binding="{Binding Model}" Width="210"/>
+                            <DataGridTextColumn Header="Чип / CPU" Binding="{Binding Cpu}" Width="190"/>
+                            <DataGridTextColumn Header="RAM" Binding="{Binding Ram}" Width="80"/>
+                            <DataGridTextColumn Header="Диск" Binding="{Binding Disk}" Width="165"/>
+                            <DataGridTextColumn Header="macOS" Binding="{Binding MacOs}" Width="125"/>
+                            <DataGridTextColumn Header="Серийный номер" Binding="{Binding SerialNumber}" Width="130"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -473,7 +510,29 @@
                             <TextBox x:Name="SettingIntervalBox" Margin="0,0,0,12"/>
 
                             <CheckBox x:Name="SettingSilentUpdateCheck" Content="Включить тихое автообновление при запуске (без лишних окон)"
-                                      Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+                                      Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+
+                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,12" Margin="0,0,0,6">
+                                <StackPanel>
+                                    <TextBlock Text="Учётные данные Mac по умолчанию (для ARD и SSH)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Логин Mac:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                            <TextBox x:Name="SettingMacUserBox"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Пароль Mac (шифруется DPAPI):" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                            <PasswordBox x:Name="SettingMacPassBox" Background="{StaticResource BgPrimaryBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                         BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" Padding="8,5"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                 <Button Content="💾 Сохранить настройки" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0" Click="SaveSettings_Click"/>

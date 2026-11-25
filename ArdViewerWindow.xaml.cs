@@ -12,11 +12,13 @@ public partial class ArdViewerWindow : Window
     private WriteableBitmap? _bitmap;
     private byte _mouseMask;
 
-    public ArdViewerWindow(string host, int port = 5900)
+    public ArdViewerWindow(string host, int port = 5900, string? savedUser = null, string? savedPass = null)
     {
         InitializeComponent();
         HostBox.Text = host;
         PortBox.Text = port.ToString();
+        if (!string.IsNullOrWhiteSpace(savedUser)) UserBox.Text = savedUser;
+        if (!string.IsNullOrEmpty(savedPass)) PassBox.Password = savedPass;
         Closed += (_, _) => _client?.Dispose();
     }
 
