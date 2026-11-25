@@ -86,6 +86,9 @@ public partial class MainWindow : Window
 
     private async Task RunSilentStartupUpdateCheckAsync()
     {
+        if (Environment.GetCommandLineArgs().Any(a => a.Equals("--updated", StringComparison.OrdinalIgnoreCase)))
+            return;
+
         if (!_settings.SilentAutoUpdate || string.IsNullOrWhiteSpace(_settings.GitHubOwner))
             return;
 

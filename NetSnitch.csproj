@@ -8,9 +8,9 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>NetSnitch</AssemblyName>
     <RootNamespace>NetSnitch</RootNamespace>
-    <Version>1.1.2</Version>
-    <AssemblyVersion>1.1.2.0</AssemblyVersion>
-    <FileVersion>1.1.2.0</FileVersion>
+    <Version>1.1.3</Version>
+    <AssemblyVersion>1.1.3.0</AssemblyVersion>
+    <FileVersion>1.1.3.0</FileVersion>
     <Product>NetSnitch Combine</Product>
     <Description>All-in-One Windows Network Monitor, Subnet/Port Scanner, Dig, MTR, WHOIS, TLS/HTTP Inspector &amp; Firewall Manager</Description>
     <ApplicationIcon>Assets\NetSnitch.ico</ApplicationIcon>

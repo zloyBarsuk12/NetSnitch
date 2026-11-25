@@ -68,16 +68,32 @@ public static class AutoUpdateService
             string assetName = "";
             if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
             {
+                // Prefer .zip archive over installer .exe
                 foreach (var a in assets.EnumerateArray())
                 {
                     string name = a.TryGetProperty("name", out var n) ? (n.GetString() ?? "") : "";
                     string dl = a.TryGetProperty("browser_download_url", out var u) ? (u.GetString() ?? "") : "";
-                    if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
-                        name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                     {
                         assetName = name;
                         downloadUrl = dl;
                         break;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(downloadUrl))
+                {
+                    foreach (var a in assets.EnumerateArray())
+                    {
+                        string name = a.TryGetProperty("name", out var n) ? (n.GetString() ?? "") : "";
+                        string dl = a.TryGetProperty("browser_download_url", out var u) ? (u.GetString() ?? "") : "";
+                        if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+                            !name.Contains("Setup", StringComparison.OrdinalIgnoreCase))
+                        {
+                            assetName = name;
+                            downloadUrl = dl;
+                            break;
+                        }
                     }
                 }
             }
@@ -141,12 +157,20 @@ public static class AutoUpdateService
             int pid = Environment.ProcessId;
 
             string scriptPath = Path.Combine(Path.GetTempPath(), $"netsnitch_update_{pid}.ps1");
-            string relaunchLine = relaunch ? $"Start-Process -FilePath '{exePath}'" : "";
+            string relaunchLine = relaunch ? $"Start-Process -FilePath '{exePath}' -ArgumentList '--updated'" : "";
 
             string psScript = $@"
 $ErrorActionPreference = 'SilentlyContinue'
 Wait-Process -Id {pid} -Timeout 15
-Start-Sleep -Milliseconds 400
+for ($i = 0; $i -lt 20; $i++) {{
+    try {{
+        $s = [System.IO.File]::Open('{exePath}', 'Open', 'ReadWrite', 'None')
+        $s.Close()
+        break
+    }} catch {{
+        Start-Sleep -Milliseconds 250
+    }}
+}}
 Copy-Item -Path '{sourceDir}\*' -Destination '{appDir}' -Recurse -Force
 {relaunchLine}
 Remove-Item -Path '{scriptPath}' -Force
