@@ -1,5 +1,5 @@
 #define MyAppName "NetSnitch Combine"
-#define MyAppVersion "1.4.1"
+#define MyAppVersion "1.5.0"
 #define MyAppPublisher "zloyBarsuk12"
 #define MyAppURL "https://github.com/zloyBarsuk12/NetSnitch"
 #define MyAppExeName "NetSnitch.exe"

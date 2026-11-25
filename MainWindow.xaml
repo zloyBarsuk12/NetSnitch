@@ -5,7 +5,8 @@
         Icon="pack://application:,,,/Assets/NetSnitch.ico"
         Height="860" Width="1440" MinHeight="650" MinWidth="1100"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource BgPrimaryBrush}">
+        Background="{DynamicResource BgPrimaryBrush}"
+        KeyDown="Window_KeyDown">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -48,7 +49,8 @@
 
                 <!-- Toolbar Buttons -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="ThemeToggleBtn" Content="☀️ Светлая" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="ThemeToggleBtn_Click" ToolTip="Переключить чёрную / светлую тему"/>
+                    <Button x:Name="CmdPaletteBtn" Content="⌘ Ctrl+K" Style="{StaticResource ToolbarButtonStyle}" Padding="8,5" Margin="0,0,5,0" Click="CmdPaletteBtn_Click" ToolTip="Командная палитра (Ctrl+K)"/>
+                    <Button x:Name="ThemeToggleBtn" Content="☀️ Светлая" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="ThemeToggleBtn_Click" ToolTip="Переключить тему (Чёрная / Светлая / Raycast)"/>
                     <Button x:Name="PauseBtn" Content="⏸ Пауза" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="PauseBtn_Click"/>
                     <Button x:Name="ClearBtn" Content="🗑 Очистить" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="ClearBtn_Click"/>
                     <Button x:Name="ExportBtn" Content="⬇ Экспорт" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,6,0" Click="ExportBtn_Click"/>
@@ -583,8 +585,34 @@
         <Border Grid.Row="2" Background="{DynamicResource BgSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16,0">
             <Grid>
                 <TextBlock x:Name="FooterStatusText" Text="Готов к работе" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                <TextBlock Text="NetSnitch Combine • Win11 Fluent" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                <TextBlock Text="NetSnitch Combine • Win11 Fluent &amp; Raycast" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
             </Grid>
         </Border>
+
+        <!-- COMMAND PALETTE OVERLAY (Ctrl+K) -->
+        <Grid x:Name="CommandPaletteOverlay" Grid.RowSpan="3" Visibility="Collapsed" Background="#99000000" MouseLeftButtonDown="CommandPaletteOverlay_MouseLeftButtonDown">
+            <Border Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1"
+                    CornerRadius="14" Width="560" VerticalAlignment="Top" Margin="0,85,0,0" Padding="12"
+                    MouseLeftButtonDown="CommandPaletteCard_MouseLeftButtonDown">
+                <StackPanel>
+                    <TextBox x:Name="CommandPaletteBox" FontSize="14" Padding="12,9"
+                             ToolTip="Введите команду, например: ard 192.168.108.11, scan 192.168.108.0/24, theme raycast"
+                             TextChanged="CommandPaletteBox_TextChanged"
+                             KeyDown="CommandPaletteBox_KeyDown"/>
+                    <ListBox x:Name="CommandPaletteList" Margin="0,8,0,0" MaxHeight="260" Background="Transparent" BorderThickness="0"
+                             MouseDoubleClick="CommandPaletteList_MouseDoubleClick">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="4,3">
+                                    <TextBlock Text="{Binding}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock Text="Enter — выполнить • Esc — закрыть • Примеры: ard 192.168.108.11, scan 192.168.108.0/24, theme raycast"
+                               FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="4,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

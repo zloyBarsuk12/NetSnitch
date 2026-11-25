@@ -100,31 +100,185 @@ public partial class MainWindow : Window
 
     private void ApplyTheme(string theme)
     {
-        bool isLight = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase);
+        string normalized = theme?.ToLowerInvariant() switch
+        {
+            "light" => "Light",
+            "raycast" => "Raycast",
+            _ => "Dark"
+        };
+
+        string uri = normalized switch
+        {
+            "Light" => "Themes/LightTheme.xaml",
+            "Raycast" => "Themes/RaycastTheme.xaml",
+            _ => "Themes/DarkTheme.xaml"
+        };
+
         var dicts = Application.Current.Resources.MergedDictionaries;
         if (dicts.Count > 0)
+            dicts[0] = new ResourceDictionary { Source = new Uri(uri, UriKind.Relative) };
+
+        ThemeToggleBtn.Content = normalized switch
         {
-            dicts[0] = new ResourceDictionary
-            {
-                Source = new Uri(isLight ? "Themes/LightTheme.xaml" : "Themes/DarkTheme.xaml", UriKind.Relative)
-            };
-        }
-        ThemeToggleBtn.Content = isLight ? "🌙 Чёрная" : "☀️ Светлая";
+            "Dark" => "☀️ Светлая",
+            "Light" => "⚡ Raycast",
+            _ => "🌙 Чёрная"
+        };
 
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
-            int darkVal = isLight ? 0 : 1;
+            int darkVal = normalized == "Light" ? 0 : 1;
             _ = DwmSetWindowAttribute(hwnd, 20, ref darkVal, sizeof(int));
         }
     }
 
     private void ThemeToggleBtn_Click(object sender, RoutedEventArgs e)
     {
-        _settings.Theme = string.Equals(_settings.Theme, "Light", StringComparison.OrdinalIgnoreCase) ? "Dark" : "Light";
+        _settings.Theme = _settings.Theme?.ToLowerInvariant() switch
+        {
+            "dark" => "Light",
+            "light" => "Raycast",
+            _ => "Dark"
+        };
         ApplyTheme(_settings.Theme);
         SettingsService.Save(_settings);
     }
+
+    #region Command Palette (Ctrl+K)
+    private static readonly string[] DefaultPaletteCommands =
+    [
+        "📡 Монитор трафика",
+        "🌐 Сканер подсетей",
+        "🍎 Инвентаризация Mac (SSH)",
+        "🔓 Сканер портов",
+        "🔍 Dig / DNS",
+        "🎧 Слушающие порты",
+        "📈 Ping / WinMTR",
+        "🛡 WHOIS / TLS / HTTP",
+        "🧱 Фаервол",
+        "⚙ Настройки и обновления",
+        "theme dark — Чёрная тема (Fluent)",
+        "theme light — Светлая тема (Fluent)",
+        "theme raycast — Minimalist / Raycast тема"
+    ];
+
+    private void Window_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.K && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            OpenCommandPalette();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && CommandPaletteOverlay.Visibility == Visibility.Visible)
+        {
+            CommandPaletteOverlay.Visibility = Visibility.Collapsed;
+            e.Handled = true;
+        }
+    }
+
+    private void CmdPaletteBtn_Click(object sender, RoutedEventArgs e) => OpenCommandPalette();
+
+    private void OpenCommandPalette()
+    {
+        CommandPaletteBox.Text = "";
+        CommandPaletteList.ItemsSource = DefaultPaletteCommands;
+        CommandPaletteList.SelectedIndex = 0;
+        CommandPaletteOverlay.Visibility = Visibility.Visible;
+        CommandPaletteBox.Focus();
+    }
+
+    private void CommandPaletteOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        => CommandPaletteOverlay.Visibility = Visibility.Collapsed;
+
+    private void CommandPaletteCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        => e.Handled = true;
+
+    private void CommandPaletteBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        string q = CommandPaletteBox.Text.Trim();
+        if (string.IsNullOrEmpty(q))
+        {
+            CommandPaletteList.ItemsSource = DefaultPaletteCommands;
+            CommandPaletteList.SelectedIndex = 0;
+            return;
+        }
+
+        var list = DefaultPaletteCommands
+            .Where(c => c.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (q.StartsWith("ard ", StringComparison.OrdinalIgnoreCase))
+            list.Insert(0, $"🖥 Подключиться по ARD: {q[4..].Trim()}");
+        else if (q.StartsWith("scan ", StringComparison.OrdinalIgnoreCase))
+            list.Insert(0, $"🌐 Сканировать подсеть: {q[5..].Trim()}");
+
+        CommandPaletteList.ItemsSource = list;
+        if (list.Count > 0) CommandPaletteList.SelectedIndex = 0;
+    }
+
+    private void CommandPaletteBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Down && CommandPaletteList.Items.Count > 0)
+        {
+            CommandPaletteList.SelectedIndex = Math.Min(CommandPaletteList.Items.Count - 1, CommandPaletteList.SelectedIndex + 1);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Up && CommandPaletteList.Items.Count > 0)
+        {
+            CommandPaletteList.SelectedIndex = Math.Max(0, CommandPaletteList.SelectedIndex - 1);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter)
+        {
+            string? selected = CommandPaletteList.SelectedItem?.ToString() ?? CommandPaletteBox.Text.Trim();
+            ExecutePaletteCommand(selected);
+            e.Handled = true;
+        }
+    }
+
+    private void CommandPaletteList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (CommandPaletteList.SelectedItem is string cmd)
+            ExecutePaletteCommand(cmd);
+    }
+
+    private void ExecutePaletteCommand(string? cmd)
+    {
+        CommandPaletteOverlay.Visibility = Visibility.Collapsed;
+        if (string.IsNullOrWhiteSpace(cmd)) return;
+
+        if (cmd.StartsWith("🖥 Подключиться по ARD:"))
+        {
+            string ip = cmd.Split(':', 2)[1].Trim();
+            string pass = SettingsService.UnprotectString(_settings.MacPasswordEncrypted);
+            new ArdViewerWindow(ip, 5900, _settings.MacUsername, pass) { Owner = this }.Show();
+            return;
+        }
+        if (cmd.StartsWith("🌐 Сканировать подсеть:"))
+        {
+            SubnetCidrCombo.Text = cmd.Split(':', 2)[1].Trim();
+            NavSubnet.IsChecked = true;
+            SubnetScanBtn_Click(this, new RoutedEventArgs());
+            return;
+        }
+
+        if (cmd.Contains("theme dark", StringComparison.OrdinalIgnoreCase)) { _settings.Theme = "Dark"; ApplyTheme("Dark"); SettingsService.Save(_settings); return; }
+        if (cmd.Contains("theme light", StringComparison.OrdinalIgnoreCase)) { _settings.Theme = "Light"; ApplyTheme("Light"); SettingsService.Save(_settings); return; }
+        if (cmd.Contains("theme raycast", StringComparison.OrdinalIgnoreCase)) { _settings.Theme = "Raycast"; ApplyTheme("Raycast"); SettingsService.Save(_settings); return; }
+
+        if (cmd.Contains("Монитор трафика")) NavTraffic.IsChecked = true;
+        else if (cmd.Contains("Сканер подсетей")) NavSubnet.IsChecked = true;
+        else if (cmd.Contains("Инвентаризация Mac")) NavMacInventory.IsChecked = true;
+        else if (cmd.Contains("Сканер портов")) NavPorts.IsChecked = true;
+        else if (cmd.Contains("Dig")) NavDig.IsChecked = true;
+        else if (cmd.Contains("Слушающие")) NavListening.IsChecked = true;
+        else if (cmd.Contains("Ping")) NavMtr.IsChecked = true;
+        else if (cmd.Contains("WHOIS")) NavInspect.IsChecked = true;
+        else if (cmd.Contains("Фаервол")) NavFirewall.IsChecked = true;
+        else if (cmd.Contains("Настройки")) NavSettings.IsChecked = true;
+    }
+    #endregion
 
     private async Task RunSilentStartupUpdateCheckAsync()
     {
