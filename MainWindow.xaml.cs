@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<DnsLogEntry> _dnsLogs = [];
     private readonly ObservableCollection<MtrHopEntry> _traceHops = [];
     private readonly ObservableCollection<SubnetHostEntry> _subnetHosts = [];
+    private readonly List<SubnetHostEntry> _allSubnetHosts = [];
     private readonly ObservableCollection<PortScanResult> _portResults = [];
     private readonly ObservableCollection<DigRecordEntry> _digResults = [];
     private readonly ObservableCollection<ListeningPortEntry> _listeningPorts = [];
@@ -301,30 +302,54 @@ public partial class MainWindow : Window
     #endregion
 
     #region Subnet Scanner
+    private void ApplySubnetFilter()
+    {
+        bool onlyMac = OnlyMacCheck.IsChecked == true;
+        _subnetHosts.Clear();
+        foreach (var h in _allSubnetHosts)
+        {
+            if (!onlyMac || h.IsMac || h.IsApple)
+                _subnetHosts.Add(h);
+        }
+    }
+
+    private void OnlyMacCheck_Changed(object sender, RoutedEventArgs e) => ApplySubnetFilter();
+
     private async void SubnetScanBtn_Click(object sender, RoutedEventArgs e)
     {
         string cidr = SubnetCidrCombo.Text.Trim();
         if (string.IsNullOrWhiteSpace(cidr)) return;
 
+        _allSubnetHosts.Clear();
         _subnetHosts.Clear();
         _subnetCts = new CancellationTokenSource();
         SubnetScanBtn.IsEnabled = false;
         SubnetStopBtn.IsEnabled = true;
-        SubnetStatusText.Text = "Сканирование...";
+        SubnetStatusText.Text = "Сканирование (Ping + ARP + mDNS)...";
 
         try
         {
             await SubnetScannerService.ScanSubnetAsync(
                 cidr,
-                host => Dispatcher.Invoke(() => _subnetHosts.Add(host)),
+                host => Dispatcher.Invoke(() =>
+                {
+                    _allSubnetHosts.Add(host);
+                    if (OnlyMacCheck.IsChecked != true || host.IsMac || host.IsApple)
+                        _subnetHosts.Add(host);
+                }),
                 (done, total) => Dispatcher.Invoke(() =>
-                    SubnetStatusText.Text = $"Проверено {done}/{total} • Найдено: {_subnetHosts.Count}"),
+                {
+                    int macs = _allSubnetHosts.Count(h => h.IsMac);
+                    SubnetStatusText.Text = $"Проверено {done}/{total} • Всего: {_allSubnetHosts.Count} • 🍎 Mac: {macs}";
+                }),
                 _subnetCts.Token);
-            SubnetStatusText.Text = $"Готово • Найдено устройств: {_subnetHosts.Count}";
+            int totalMacs = _allSubnetHosts.Count(h => h.IsMac);
+            SubnetStatusText.Text = $"Готово • Устройств: {_allSubnetHosts.Count} • 🍎 Mac найдено: {totalMacs}";
         }
         catch (OperationCanceledException)
         {
-            SubnetStatusText.Text = $"Остановлено • Найдено: {_subnetHosts.Count}";
+            int macs = _allSubnetHosts.Count(h => h.IsMac);
+            SubnetStatusText.Text = $"Остановлено • Устройств: {_allSubnetHosts.Count} • 🍎 Mac: {macs}";
         }
         catch (Exception ex)
         {

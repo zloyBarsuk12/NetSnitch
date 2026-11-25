@@ -261,18 +261,20 @@
                         <TextBlock Text="Подсеть (CIDR):" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <ComboBox x:Name="SubnetCidrCombo" Width="220" IsEditable="True" Margin="0,0,8,0"/>
                         <Button x:Name="SubnetScanBtn" Content="▶ Сканировать подсеть" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="SubnetScanBtn_Click"/>
-                        <Button x:Name="SubnetStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,12,0" Click="SubnetStopBtn_Click"/>
+                        <Button x:Name="SubnetStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,10,0" Click="SubnetStopBtn_Click"/>
+                        <CheckBox x:Name="OnlyMacCheck" Content="🍎 Только Mac / Apple" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Checked="OnlyMacCheck_Changed" Unchecked="OnlyMacCheck_Changed"/>
                         <TextBlock x:Name="SubnetStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
                     <DataGrid x:Name="SubnetGrid" Grid.Row="1">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="145"/>
-                            <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="210"/>
-                            <DataGridTextColumn Header="MAC-адрес" Binding="{Binding MacAddress}" Width="150"/>
-                            <DataGridTextColumn Header="Производитель (OUI)" Binding="{Binding Vendor}" Width="180"/>
-                            <DataGridTextColumn Header="Пинг" Binding="{Binding RttMs}" Width="85"/>
-                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="85"/>
-                            <DataGridTemplateColumn Header="Действия" Width="170">
+                            <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="135"/>
+                            <DataGridTextColumn Header="Тип / ОС" Binding="{Binding DeviceType}" Width="185"/>
+                            <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="190"/>
+                            <DataGridTextColumn Header="MAC-адрес" Binding="{Binding MacAddress}" Width="140"/>
+                            <DataGridTextColumn Header="Производитель (OUI)" Binding="{Binding Vendor}" Width="150"/>
+                            <DataGridTextColumn Header="Пинг" Binding="{Binding RttMs}" Width="75"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="75"/>
+                            <DataGridTemplateColumn Header="Действия" Width="155">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">

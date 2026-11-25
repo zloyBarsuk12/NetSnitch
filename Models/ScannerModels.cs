@@ -5,6 +5,7 @@ public class SubnetHostEntry : ObservableObject
     private string _hostname = "—";
     private string _macAddress = "—";
     private string _vendor = "—";
+    private string _deviceType = "—";
     private string _rttMs = "—";
     private string _status = "Online";
 
@@ -12,6 +13,9 @@ public class SubnetHostEntry : ObservableObject
     public string Hostname { get => _hostname; set => SetProperty(ref _hostname, value); }
     public string MacAddress { get => _macAddress; set => SetProperty(ref _macAddress, value); }
     public string Vendor { get => _vendor; set => SetProperty(ref _vendor, value); }
+    public string DeviceType { get => _deviceType; set => SetProperty(ref _deviceType, value); }
+    public bool IsApple { get; set; }
+    public bool IsMac { get; set; }
     public string RttMs { get => _rttMs; set => SetProperty(ref _rttMs, value); }
     public string Status { get => _status; set => SetProperty(ref _status, value); }
 }
