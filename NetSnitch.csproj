@@ -13,7 +13,12 @@
     <FileVersion>1.1.0.0</FileVersion>
     <Product>NetSnitch Combine</Product>
     <Description>All-in-One Windows Network Monitor, Subnet/Port Scanner, Dig, MTR, WHOIS, TLS/HTTP Inspector &amp; Firewall Manager</Description>
+    <ApplicationIcon>Assets\NetSnitch.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\NetSnitch.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="installer\**" />

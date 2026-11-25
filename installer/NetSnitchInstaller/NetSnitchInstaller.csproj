@@ -6,8 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <AssemblyName>NetSnitchSetup</AssemblyName>
+    <ApplicationIcon>..\..\Assets\NetSnitch.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="payload.zip" />
+    <Resource Include="..\..\Assets\NetSnitch.ico" Link="NetSnitch.ico" />
   </ItemGroup>
 </Project>

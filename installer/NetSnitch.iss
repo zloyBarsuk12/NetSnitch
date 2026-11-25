@@ -18,6 +18,7 @@ PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=..\dist
 OutputBaseFilename=NetSnitch-Setup-win-x64
+SetupIconFile=..\Assets\NetSnitch.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
