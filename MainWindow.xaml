@@ -42,18 +42,18 @@
                 </Border>
 
                 <!-- Search -->
-                <TextBox x:Name="GlobalSearchBox" Grid.Column="2" Width="240" VerticalAlignment="Center" Margin="0,0,10,0"
+                <TextBox x:Name="GlobalSearchBox" Grid.Column="2" Width="185" VerticalAlignment="Center" Margin="0,0,8,0"
                          ToolTip="Поиск: домен, IP, порт, орг..."
                          TextChanged="GlobalSearchBox_TextChanged"/>
 
                 <!-- Toolbar Buttons -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="ThemeToggleBtn" Content="☀️ Светлая" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="ThemeToggleBtn_Click" ToolTip="Переключить чёрную / светлую тему"/>
-                    <Button x:Name="PauseBtn" Content="⏸ Пауза" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="PauseBtn_Click"/>
-                    <Button x:Name="ClearBtn" Content="🗑 Очистить" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="ClearBtn_Click"/>
-                    <Button x:Name="ExportBtn" Content="⬇ Экспорт" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,8,0" Click="ExportBtn_Click"/>
-                    <Border x:Name="VersionBadge" Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource AccentGreenBrush}" BorderThickness="1" CornerRadius="6" Padding="8,4" Cursor="Hand" MouseLeftButtonUp="VersionBadge_Click">
-                        <TextBlock x:Name="VersionBadgeText" Text="v1.4.0" FontSize="11" Foreground="{DynamicResource AccentGreenBrush}" FontWeight="SemiBold"/>
+                    <Button x:Name="ThemeToggleBtn" Content="☀️ Светлая" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="ThemeToggleBtn_Click" ToolTip="Переключить чёрную / светлую тему"/>
+                    <Button x:Name="PauseBtn" Content="⏸ Пауза" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="PauseBtn_Click"/>
+                    <Button x:Name="ClearBtn" Content="🗑 Очистить" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,5,0" Click="ClearBtn_Click"/>
+                    <Button x:Name="ExportBtn" Content="⬇ Экспорт" Style="{StaticResource ToolbarButtonStyle}" Padding="9,5" Margin="0,0,6,0" Click="ExportBtn_Click"/>
+                    <Border x:Name="VersionBadge" Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource AccentGreenBrush}" BorderThickness="1" CornerRadius="6" Padding="7,4" Cursor="Hand" MouseLeftButtonUp="VersionBadge_Click">
+                        <TextBlock x:Name="VersionBadgeText" Text="v1.4.1" FontSize="11" Foreground="{DynamicResource AccentGreenBrush}" FontWeight="SemiBold"/>
                     </Border>
                 </StackPanel>
             </Grid>
