@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+.nuget/
+.appdata/
+nuget.config
+*.user
+*.suo

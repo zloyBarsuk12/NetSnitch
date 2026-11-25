@@ -1,0 +1,33 @@
+name: Build & Release NetSnitch
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish Release (win-x64)
+        run: dotnet publish NetSnitch.csproj -c Release -r win-x64 --self-contained false -o ./publish
+
+      - name: Create ZIP Archive
+        shell: pwsh
+        run: Compress-Archive -Path ./publish/* -DestinationPath ./NetSnitch-win-x64.zip -Force
+
+      - name: Upload GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NetSnitch-win-x64.zip
+          generate_release_notes: true

@@ -1,0 +1,496 @@
+<Window x:Class="NetSnitch.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="NetSnitch Combine — Сетевой монитор и комбайн инструментов"
+        Height="860" Width="1440" MinHeight="650" MinWidth="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgPrimaryBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="26"/>
+        </Grid.RowDefinitions>
+
+        <!-- TOP HEADER BAR -->
+        <Border Grid.Row="0" Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="14,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Brand -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="10" Height="10" Fill="{StaticResource AccentGreenBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="NetSnitch" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                    <TextBlock Text="Network Combine" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="8,1,0,0"/>
+                    <Border Background="#2D2212" BorderBrush="#92400E" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
+                        <TextBlock Text="Socket Polling + DNS + Tools" FontSize="11" Foreground="#FBBF24"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- Center stats pill -->
+                <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Background="{StaticResource BgPrimaryBrush}" BorderBrush="{StaticResource BorderLightBrush}"
+                        BorderThickness="1" CornerRadius="5" Padding="16,4">
+                    <TextBlock x:Name="StatsPillText" Text="0 хостов • 0 событий" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                </Border>
+
+                <!-- Search -->
+                <TextBox x:Name="GlobalSearchBox" Grid.Column="2" Width="260" VerticalAlignment="Center" Margin="0,0,10,0"
+                         ToolTip="Поиск: домен, IP, порт, орг..."
+                         TextChanged="GlobalSearchBox_TextChanged"/>
+
+                <!-- Toolbar Buttons -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="PauseBtn" Content="⏸ Пауза" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="PauseBtn_Click"/>
+                    <Button x:Name="ClearBtn" Content="🗑 Очистить" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="ClearBtn_Click"/>
+                    <Button x:Name="ExportBtn" Content="⬇ Экспорт (csv/txt)" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,8,0" Click="ExportBtn_Click"/>
+                    <Border x:Name="VersionBadge" Background="#132A1F" BorderBrush="#166534" BorderThickness="1" CornerRadius="4" Padding="8,4" Cursor="Hand" MouseLeftButtonUp="VersionBadge_Click">
+                        <TextBlock x:Name="VersionBadgeText" Text="v1.0.0" FontSize="11" Foreground="#4ADE80"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- MAIN BODY -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="235"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT SIDEBAR -->
+            <Border Grid.Column="0" Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Module Navigation -->
+                    <StackPanel Grid.Row="0" Margin="6,8,6,6">
+                        <TextBlock Text="ИНСТРУМЕНТЫ" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="10,2,0,4"/>
+                        <RadioButton x:Name="NavTraffic" Content="📡  Монитор трафика" Style="{StaticResource NavButtonStyle}" IsChecked="True" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavSubnet" Content="🌐  Сканер подсетей" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavPorts" Content="🔓  Сканер портов" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavDig" Content="🔍  Dig / DNS" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavListening" Content="🎧  Слушающие порты" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavMtr" Content="📈  Ping / WinMTR" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavInspect" Content="🛡  WHOIS / TLS / HTTP" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavFirewall" Content="🧱  Фаервол" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                        <RadioButton x:Name="NavSettings" Content="⚙  Настройки и обновления" Style="{StaticResource NavButtonStyle}" Checked="Nav_Checked"/>
+                    </StackPanel>
+
+                    <!-- Process List (WinSnitch style) -->
+                    <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="8,8,8,4">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="4,0,4,6">
+                                <TextBlock Text="Приложения" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                <Button Content="Сброс" Style="{StaticResource MiniButtonStyle}" HorizontalAlignment="Right" Click="ResetProcessFilter_Click"/>
+                            </Grid>
+                            <ListBox x:Name="ProcessListBox" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     SelectionChanged="ProcessListBox_SelectionChanged">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="8,6"/>
+                                        <Setter Property="Margin" Value="0,2"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="bd" Property="Background" Value="{StaticResource BgHoverBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="bd" Property="Background" Value="{StaticResource BgSelectedBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ProcessName}" FontWeight="SemiBold" FontSize="12" Foreground="#F8FAFC"/>
+                                            <TextBlock Text="{Binding Subtitle}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- RIGHT WORKSPACE PANELS -->
+            <Grid Grid.Column="1" Margin="10">
+
+                <!-- 1. TRAFFIC MONITOR PANEL -->
+                <Grid x:Name="PanelTraffic" Visibility="Visible">
+                    <TabControl x:Name="TrafficSubTabs">
+                        <TabItem Header="Адреса и хосты">
+                            <DataGrid x:Name="ConnectionsGrid" Margin="0,6,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Приложение" Binding="{Binding ProcessName}" Width="125"/>
+                                    <DataGridTextColumn Header="Домен / Хост" Binding="{Binding Domain}" Width="185"/>
+                                    <DataGridTextColumn Header="IP-адрес : Порт" Binding="{Binding IpPort}" Width="195"/>
+                                    <DataGridTextColumn Header="Протокол" Binding="{Binding Protocol}" Width="75"/>
+                                    <DataGridTextColumn Header="Организация / Страна" Binding="{Binding Organization}" Width="190"/>
+                                    <DataGridTemplateColumn Header="Статус" Width="105">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="3" Padding="6,2" HorizontalAlignment="Left">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#1E293B"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Status}" Value="ESTABLISHED">
+                                                                    <Setter Property="Background" Value="#064E3B"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="ESTABLISHED">
+                                                                        <Setter Property="Foreground" Value="#34D399"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Хиты" Binding="{Binding Hits}" Width="55"/>
+                                    <DataGridTextColumn Header="Последний раз" Binding="{Binding LastSeen}" Width="95"/>
+                                    <DataGridTemplateColumn Header="Действие" Width="145">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Content="Трасс." Style="{StaticResource MiniButtonStyle}" Margin="0,0,4,0" Click="RowTrace_Click"/>
+                                                    <Button Content="Блок. IP" Style="{StaticResource DangerMiniButtonStyle}" Click="RowBlockIp_Click"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Лента трафика">
+                            <DataGrid x:Name="TrafficEventsGrid" Margin="0,6,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Время" Binding="{Binding Time}" Width="85"/>
+                                    <DataGridTextColumn Header="Событие" Binding="{Binding EventType}" Width="80"/>
+                                    <DataGridTextColumn Header="Приложение" Binding="{Binding ProcessName}" Width="135"/>
+                                    <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="65"/>
+                                    <DataGridTextColumn Header="Протокол" Binding="{Binding Protocol}" Width="75"/>
+                                    <DataGridTextColumn Header="Удаленный адрес" Binding="{Binding RemoteEndpoint}" Width="190"/>
+                                    <DataGridTextColumn Header="Домен" Binding="{Binding Domain}" Width="200"/>
+                                    <DataGridTextColumn Header="Организация" Binding="{Binding Organization}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="DNS-запросы">
+                            <DataGrid x:Name="DnsLogsGrid" Margin="0,6,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Время" Binding="{Binding Time}" Width="85"/>
+                                    <DataGridTextColumn Header="Домен" Binding="{Binding Domain}" Width="260"/>
+                                    <DataGridTextColumn Header="IP-адрес" Binding="{Binding ResolvedIp}" Width="160"/>
+                                    <DataGridTextColumn Header="Приложение" Binding="{Binding ProcessName}" Width="150"/>
+                                    <DataGridTextColumn Header="Источник" Binding="{Binding Source}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Трассировка">
+                            <Grid Margin="0,6,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBox x:Name="TraceTargetBox" Width="280" Text="1.1.1.1" Margin="0,0,8,0"/>
+                                    <Button x:Name="TraceRunBtn" Content="▶ Трассировка" Style="{StaticResource PrimaryButtonStyle}" Click="TraceRunBtn_Click"/>
+                                    <TextBlock x:Name="TraceStatusText" Text="" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                                <DataGrid x:Name="TraceGrid" Grid.Row="1">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Хоп" Binding="{Binding Hop}" Width="55"/>
+                                        <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="160"/>
+                                        <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="240"/>
+                                        <DataGridTextColumn Header="RTT" Binding="{Binding LastDisplay}" Width="90"/>
+                                        <DataGridTextColumn Header="Организация / Страна" Binding="{Binding Organization}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
+
+                <!-- 2. SUBNET SCANNER PANEL -->
+                <Grid x:Name="PanelSubnet" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Подсеть (CIDR):" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <ComboBox x:Name="SubnetCidrCombo" Width="220" IsEditable="True" Margin="0,0,8,0"/>
+                        <Button x:Name="SubnetScanBtn" Content="▶ Сканировать подсеть" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="SubnetScanBtn_Click"/>
+                        <Button x:Name="SubnetStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,12,0" Click="SubnetStopBtn_Click"/>
+                        <TextBlock x:Name="SubnetStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <DataGrid x:Name="SubnetGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="145"/>
+                            <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="210"/>
+                            <DataGridTextColumn Header="MAC-адрес" Binding="{Binding MacAddress}" Width="150"/>
+                            <DataGridTextColumn Header="Производитель (OUI)" Binding="{Binding Vendor}" Width="180"/>
+                            <DataGridTextColumn Header="Пинг" Binding="{Binding RttMs}" Width="85"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="85"/>
+                            <DataGridTemplateColumn Header="Действия" Width="170">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Порты" Style="{StaticResource MiniButtonStyle}" Margin="0,0,4,0" Click="SubnetScanPorts_Click"/>
+                                            <Button Content="WoL" Style="{StaticResource MiniButtonStyle}" Click="SubnetWol_Click"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 3. PORT SCANNER PANEL -->
+                <Grid x:Name="PanelPorts" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <WrapPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Хост / IP:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="PortHostBox" Width="180" Text="127.0.0.1" Margin="0,0,10,0"/>
+                        <TextBlock Text="Профиль:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <ComboBox x:Name="PortProfileCombo" Width="160" Margin="0,0,10,0" SelectedIndex="0" SelectionChanged="PortProfileCombo_SelectionChanged">
+                            <ComboBoxItem Content="Top-47 (Быстрый)"/>
+                            <ComboBoxItem Content="Web / DB / Infra"/>
+                            <ComboBoxItem Content="1-1024 (Стандарт)"/>
+                            <ComboBoxItem Content="Свой диапазон"/>
+                        </ComboBox>
+                        <TextBox x:Name="PortRangeBox" Width="160" Text="1-1024" Visibility="Collapsed" Margin="0,0,10,0"/>
+                        <CheckBox x:Name="BannerGrabCheck" Content="Banner Grabbing" IsChecked="True" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <Button x:Name="PortScanBtn" Content="▶ Сканировать" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="PortScanBtn_Click"/>
+                        <Button x:Name="PortStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,12,0" Click="PortStopBtn_Click"/>
+                        <TextBlock x:Name="PortStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="PortGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Хост" Binding="{Binding Host}" Width="140"/>
+                            <DataGridTextColumn Header="Порт" Binding="{Binding Port}" Width="75"/>
+                            <DataGridTextColumn Header="Протокол" Binding="{Binding Protocol}" Width="80"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding State}" Width="80"/>
+                            <DataGridTextColumn Header="Сервис" Binding="{Binding Service}" Width="140"/>
+                            <DataGridTextColumn Header="Задержка (мс)" Binding="{Binding LatencyMs}" Width="105"/>
+                            <DataGridTextColumn Header="Баннер / Ответ" Binding="{Binding Banner}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 4. DIG / DNS INSPECTOR PANEL -->
+                <Grid x:Name="PanelDig" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Домен / IP:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="DigDomainBox" Width="220" Text="google.com" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="DigTypeCombo" Width="95" Margin="0,0,8,0" SelectedIndex="0"/>
+                        <ComboBox x:Name="DigResolverCombo" Width="170" IsEditable="True" Margin="0,0,8,0" SelectedIndex="0">
+                            <ComboBoxItem Content="1.1.1.1"/>
+                            <ComboBoxItem Content="8.8.8.8"/>
+                            <ComboBoxItem Content="9.9.9.9"/>
+                            <ComboBoxItem Content="77.88.8.8"/>
+                            <ComboBoxItem Content="DoH: Cloudflare"/>
+                            <ComboBoxItem Content="DoH: Google"/>
+                        </ComboBox>
+                        <Button Content="▶ Dig запрос" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="DigRunBtn_Click"/>
+                        <Button Content="⚖ Сравнить все DNS" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,12,0" Click="DigCompareBtn_Click"/>
+                        <TextBlock x:Name="DigStatusText" Text="" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <DataGrid x:Name="DigGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Резолвер" Binding="{Binding Resolver}" Width="140"/>
+                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="210"/>
+                            <DataGridTextColumn Header="Тип" Binding="{Binding RecordType}" Width="75"/>
+                            <DataGridTextColumn Header="TTL" Binding="{Binding Ttl}" Width="75"/>
+                            <DataGridTextColumn Header="Время (мс)" Binding="{Binding QueryTimeMs}" Width="90"/>
+                            <DataGridTextColumn Header="Значение" Binding="{Binding Value}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 5. LISTENING PORTS PANEL -->
+                <Grid x:Name="PanelListening" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="🔄 Обновить список" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,12,0" Click="RefreshListeningBtn_Click"/>
+                        <TextBlock x:Name="ListeningStatusText" Text="Локальные открытые порты (TCP/UDP LISTEN)" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <DataGrid x:Name="ListeningGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Протокол" Binding="{Binding Protocol}" Width="85"/>
+                            <DataGridTextColumn Header="Локальный адрес" Binding="{Binding LocalAddress}" Width="170"/>
+                            <DataGridTextColumn Header="Порт" Binding="{Binding LocalPort}" Width="85"/>
+                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="75"/>
+                            <DataGridTextColumn Header="Процесс" Binding="{Binding ProcessName}" Width="170"/>
+                            <DataGridTextColumn Header="Путь к файлу" Binding="{Binding ProcessPath}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 6. PING / WINMTR PANEL -->
+                <Grid x:Name="PanelMtr" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Цель:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="MtrTargetBox" Width="220" Text="1.1.1.1" Margin="0,0,8,0"/>
+                        <Button x:Name="MtrStartBtn" Content="▶ Запустить MTR" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="MtrStartBtn_Click"/>
+                        <Button x:Name="MtrStopBtn" Content="■ Стоп" Style="{StaticResource ToolbarButtonStyle}" IsEnabled="False" Margin="0,0,12,0" Click="MtrStopBtn_Click"/>
+                        <TextBlock x:Name="MtrStatusText" Text="Готов" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <DataGrid x:Name="MtrGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Хоп" Binding="{Binding Hop}" Width="55"/>
+                            <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAddress}" Width="140"/>
+                            <DataGridTextColumn Header="Hostname" Binding="{Binding Hostname}" Width="210"/>
+                            <DataGridTextColumn Header="Отпр." Binding="{Binding Sent}" Width="65"/>
+                            <DataGridTextColumn Header="Потери" Binding="{Binding LossDisplay}" Width="75"/>
+                            <DataGridTextColumn Header="Последн." Binding="{Binding LastDisplay}" Width="85"/>
+                            <DataGridTextColumn Header="Средн." Binding="{Binding AvgDisplay}" Width="85"/>
+                            <DataGridTextColumn Header="Лучш." Binding="{Binding BestDisplay}" Width="85"/>
+                            <DataGridTextColumn Header="Худш." Binding="{Binding WorstDisplay}" Width="85"/>
+                            <DataGridTextColumn Header="Организация" Binding="{Binding Organization}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 7. WHOIS / TLS / HTTP PANEL -->
+                <Grid x:Name="PanelInspect" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Домен / IP / URL:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="InspectTargetBox" Width="280" Text="github.com" Margin="0,0,8,0"/>
+                        <Button Content="WHOIS + GeoIP" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,6,0" Click="InspectWhois_Click"/>
+                        <Button Content="TLS Сертификат" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,6,0" Click="InspectTls_Click"/>
+                        <Button Content="HTTP Проба" Style="{StaticResource ToolbarButtonStyle}" Click="InspectHttp_Click"/>
+                    </StackPanel>
+                    <TextBox x:Name="InspectOutputBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"
+                             VerticalContentAlignment="Top" Padding="10"/>
+                </Grid>
+
+                <!-- 8. FIREWALL MANAGER PANEL -->
+                <Grid x:Name="PanelFirewall" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="🔄 Обновить правила" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,10,0" Click="RefreshFirewallBtn_Click"/>
+                        <TextBlock Text="Показываются правила Windows Defender Firewall, созданные NetSnitch" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <DataGrid x:Name="FirewallGrid" Grid.Row="1">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Имя правила" Binding="{Binding RuleName}" Width="260"/>
+                            <DataGridTextColumn Header="Цель (IP / Программа)" Binding="{Binding Target}" Width="220"/>
+                            <DataGridTextColumn Header="Направление" Binding="{Binding Direction}" Width="110"/>
+                            <DataGridTextColumn Header="Действие" Binding="{Binding Action}" Width="95"/>
+                            <DataGridTextColumn Header="Активно" Binding="{Binding Enabled}" Width="85"/>
+                            <DataGridTemplateColumn Header="Управление" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Разблокировать" Style="{StaticResource DangerMiniButtonStyle}" Click="DeleteFirewallRule_Click"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- 9. SETTINGS & SILENT AUTO-UPDATE PANEL -->
+                <Grid x:Name="PanelSettings" Visibility="Collapsed">
+                    <Border Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="20" MaxWidth="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Настройки и тихое обновление (GitHub Releases)" FontSize="15" FontWeight="Bold" Margin="0,0,0,14"/>
+
+                            <TextBlock Text="GitHub Владелец / Организация:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="SettingOwnerBox" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="GitHub Репозиторий:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="SettingRepoBox" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Интервал опроса сокетов (мс):" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="SettingIntervalBox" Margin="0,0,0,12"/>
+
+                            <CheckBox x:Name="SettingSilentUpdateCheck" Content="Включить тихое автообновление при запуске (без лишних окон)"
+                                      Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Button Content="💾 Сохранить настройки" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0" Click="SaveSettings_Click"/>
+                                <Button Content="🔍 Проверить обновления" Style="{StaticResource ToolbarButtonStyle}" Margin="0,0,8,0" Click="CheckUpdateBtn_Click"/>
+                                <Button x:Name="ApplyUpdateBtn" Content="⚡ Обновить сейчас (тихо)" Style="{StaticResource ToolbarButtonStyle}" Visibility="Collapsed" Click="ApplyUpdateBtn_Click"/>
+                            </StackPanel>
+
+                            <TextBlock x:Name="UpdateStatusText" Text="" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+            </Grid>
+        </Grid>
+
+        <!-- STATUS BAR -->
+        <Border Grid.Row="2" Background="{StaticResource BgSecondaryBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,0">
+            <Grid>
+                <TextBlock x:Name="FooterStatusText" Text="Готов к работе" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <TextBlock Text="NetSnitch Combine • C# / WPF (.NET)" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
