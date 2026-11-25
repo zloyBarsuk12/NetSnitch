@@ -26,8 +26,20 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path ./publish/* -DestinationPath ./NetSnitch-win-x64.zip -Force
 
+      - name: Build Inno Setup Installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (Test-Path $iscc) {
+            & $iscc installer\NetSnitch.iss
+          } else {
+            Write-Warning "Inno Setup not found on runner"
+          }
+
       - name: Upload GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: NetSnitch-win-x64.zip
+          files: |
+            NetSnitch-win-x64.zip
+            dist/NetSnitch-Setup-win-x64.exe
           generate_release_notes: true

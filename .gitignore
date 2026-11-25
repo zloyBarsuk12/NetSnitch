@@ -1,5 +1,10 @@
 bin/
 obj/
+publish/
+dist/
+installer/**/bin/
+installer/**/obj/
+installer/**/payload.zip
 .vs/
 .nuget/
 .appdata/

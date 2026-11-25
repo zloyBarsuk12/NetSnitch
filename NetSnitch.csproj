@@ -15,4 +15,10 @@
     <Description>All-in-One Windows Network Monitor, Subnet/Port Scanner, Dig, MTR, WHOIS, TLS/HTTP Inspector &amp; Firewall Manager</Description>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="installer\**" />
+    <Page Remove="installer\**" />
+    <None Remove="installer\**" />
+  </ItemGroup>
+
 </Project>
